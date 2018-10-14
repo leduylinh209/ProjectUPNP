@@ -10,12 +10,8 @@ public class Controller {
     @FXML
     private Label alarmStatusLb;
 
-    public Controller() {
-        System.out.println("abc");
-    }
-
     public void  changeText() {
-        alarmStatusLb.setText("abc");
+        alarmStatusLb.setText("Online");
     }
 
     public void changeStatus(ActionEvent actionEvent) {
@@ -25,6 +21,10 @@ public class Controller {
         } else {
             System.out.println("abc");
         }
+    }
+
+    public void changeTextOffline() {
+        alarmStatusLb.setText("Offline");
     }
 }
 

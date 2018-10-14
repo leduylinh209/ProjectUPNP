@@ -35,13 +35,18 @@ import java.util.Map;
  *
  * @author NgThach96
  */
-public class ControlPoint extends Application implements Runnable{
-
-    private Controller controller = new Controller();
+public class ControlPoint extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("sample.fxml"));
+        Parent root = loader.load();
+        Controller controller = loader.getController();
+
+        Thread clientThread = new Thread(new test(controller));
+        clientThread.setDaemon(false);
+        clientThread.start();
+
         primaryStage.setTitle("Control Panel");
         primaryStage.setScene(new Scene(root, 300, 275));
         primaryStage.show();
@@ -51,138 +56,7 @@ public class ControlPoint extends Application implements Runnable{
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        Thread clientThread = new Thread(new ControlPoint());
-        clientThread.setDaemon(false);
-        clientThread.start();
         launch(args);
-    }
-
-    @Override
-    public void run() {
-        try {
-
-            UpnpService upnpService = new UpnpServiceImpl();
-            
-            // Add a listener for device registration events
-            upnpService.getRegistry().addListener(
-                    createRegistryListener(upnpService)
-            );
-            // Broadcast a search message for all devices
-            upnpService.getControlPoint().search(
-                    new STAllHeader()
-            );
-        } catch (Exception ex) {
-            System.err.println("Exception occured: " + ex);
-            System.exit(1);
-        }
-    }
-    
-    // DOC: REGISTRYLISTENER
-    RegistryListener createRegistryListener(final UpnpService upnpService) {
-        return new DefaultRegistryListener() {
-
-            ServiceId serviceId = new UDAServiceId("SwitchStatus");
-
-            
-            // Chạy đầu tiên
-            // Phát hiện ra con remote chỵ service gì
-            @Override
-            public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
-
-                controller.changeText();
-                Service switchStatus;
-                if ((switchStatus = device.findService(serviceId)) != null) {
-
-                    System.out.println("Service discovered: " + switchStatus);
-                    // Khi phát hiện ra, gọi đến một hành động
-                    executeAction(upnpService, switchStatus);
-                    
-                    // Đăng ký lắng nghe service mới 
-                    SubscriptionCallback callback = new SubscriptionCallback(switchStatus, 600) { // Timeout in seconds
-
-                        // Hành động khi service có sự thay đổi
-                        public void eventReceived(GENASubscription sub) {
-                            System.out.println("Event: " + sub.getCurrentSequence().getValue());
-                            Map<String, StateVariableValue> values = sub.getCurrentValues();
-                            StateVariableValue status = values.get("Status");
-                            System.out.println("Status is: " + status.toString());
-                        }
-                        
-                        public void established(GENASubscription sub) {
-                            System.out.println("Established: " + sub.getSubscriptionId());
-                        }
-
-                        public void ended(GENASubscription sub, CancelReason reason, UpnpResponse response) {
-                            // Reason should be null, or it didn't end regularly
-                        } 
-
-                        public void eventsMissed(GENASubscription sub, int numberOfMissedEvents) {
-                            System.out.println("Missed events: " + numberOfMissedEvents);
-                        }
-
-                        @Override
-                        protected void failed(GENASubscription genas, UpnpResponse ur, Exception excptn, String string) {
-                            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-                        }
-                   };
-
-                upnpService.getControlPoint().execute(callback);
-                }
-
-            }
-
-            @Override
-            public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
-                Service switchPower;
-                if ((switchPower = device.findService(serviceId)) != null) {
-                    System.out.println("Service disappeared: " + switchPower);
-                }
-            }
-
-        };
-    }
-    // DOC: REGISTRYLISTENER
-    // DOC: EXECUTEACTION
-    void executeAction(UpnpService upnpService, Service switchPowerService) {
-
-            ActionInvocation setTargetInvocation =
-                    new SetTargetActionInvocation(switchPowerService);
-
-            // Executes asynchronous in the background
-            upnpService.getControlPoint().execute(
-                    new ActionCallback(setTargetInvocation) {
-
-                        @Override
-                        public void success(ActionInvocation invocation) {
-                            assert invocation.getOutput().length == 0;
-                            System.out.println("Successfully called action!");
-                        }
-
-                        @Override
-                        public void failure(ActionInvocation invocation,
-                                            UpnpResponse operation,
-                                            String defaultMsg) {
-                            System.err.println(defaultMsg);
-                        }
-                    }
-            );
-
-    }
-
-    class SetTargetActionInvocation extends ActionInvocation {
-
-        SetTargetActionInvocation(Service service) {
-            super(service.getAction("SetTarget"));
-            try {
-
-                // Throws InvalidValueException if the value is of wrong type
-                setInput("NewTargetValue", true);
-
-            } catch (InvalidValueException ex) {
-                System.err.println(ex.getMessage());
-                System.exit(1);
-            }
-        }
     }
     
 }
