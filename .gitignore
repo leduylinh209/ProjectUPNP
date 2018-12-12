@@ -38,9 +38,11 @@
 
 *.rar
 
-./out
+out
+out/*
 
-./.idea
+.idea
+.idea/*
 
 
 
