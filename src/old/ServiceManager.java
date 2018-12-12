@@ -22,8 +22,7 @@ public class ServiceManager {
     private boolean scenario_activated = false;
     public boolean power = false;
 
-    public ServiceManager(Service power_service, UpnpService upnpService)
-    {
+    public ServiceManager(Service power_service, UpnpService upnpService) {
         this.power_service = power_service;
         this.upnpService = upnpService;
         this.setPowerAction = new SetPowerAction(this.power_service);
@@ -64,13 +63,9 @@ public class ServiceManager {
     }
 
 
-
-
-    private void set_power(boolean value, boolean sync)
-    {
+    private void set_power(boolean value, boolean sync) {
         this.setPowerAction.setInput("newTargetValue", value);
-        if(!sync)
-        {
+        if (!sync) {
             ActionCallback actionCallback = new ActionCallback(this.setPowerAction) {
                 @Override
                 public void success(ActionInvocation invocation) {
@@ -83,14 +78,12 @@ public class ServiceManager {
                 }
             };
             this.upnpService.getControlPoint().execute(actionCallback);
-        }
-        else
+        } else
             new ActionCallback.Default(this.setPowerAction, upnpService.getControlPoint()).run();
     }
 
-    public void scenario_started()
-    {
-        set_power(true, false);
+    public void scenario_started() {
+        set_power(true, true);
     }
 }
 
@@ -98,8 +91,7 @@ public class ServiceManager {
 class SetPowerAction extends ActionInvocation {
     private UpnpService upnpService;
 
-    public SetPowerAction(Service service)
-    {
+    public SetPowerAction(Service service) {
         super(service.getAction("SetTarget"));
     }
 }

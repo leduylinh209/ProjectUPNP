@@ -10,7 +10,6 @@ import org.fourthline.cling.binding.annotations.*;
 import java.beans.PropertyChangeSupport;
 
 /**
- *
  * @author Admins
  */
 @UpnpService(
@@ -20,21 +19,21 @@ import java.beans.PropertyChangeSupport;
 
 public class SwitchStatus {
     private final PropertyChangeSupport propertyChangeSupport;
-    
+
     public SwitchStatus() {
         this.propertyChangeSupport = new PropertyChangeSupport(this);
     }
-    
+
     public PropertyChangeSupport getPropertyChangeSupport() {
         return propertyChangeSupport;
     }
-    
+
     @UpnpStateVariable(defaultValue = "0", sendEvents = false)
     private boolean target = false;
-    
+
     @UpnpStateVariable(defaultValue = "0")
     private boolean status = false;
-    
+
     @UpnpAction
     public void setTarget(@UpnpInputArgument(name = "NewTargetValue") boolean newTargetValue) {
         boolean targetOldValue = target;
@@ -49,7 +48,7 @@ public class SwitchStatus {
         // This will send a UPnP event, it's the name of a state variable that sends events
         getPropertyChangeSupport().firePropertyChange("Status", statusOldValue, status);
     }
-    
+
     @UpnpAction(out = @UpnpOutputArgument(name = "RetTargetValue"))
     public boolean getTarget() {
         return target;

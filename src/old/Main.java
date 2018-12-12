@@ -43,32 +43,30 @@ public class Main {
 
     public static UpnpService upnpService;
     public static ArrayList<ServiceManager> volume_services = new ArrayList<>();
-    public static void alarm_notify(boolean status)
-    {
-        for(ServiceManager serviceManager : volume_services)
-        {
+
+    public static void alarm_notify(boolean status) {
+        for (ServiceManager serviceManager : volume_services) {
             serviceManager.scenario_started();
         }
     }
+
     public static int notify = 2;
     public static Setup setup = new Setup();
+
     public static void main(String[] args) throws Exception {
-        
+
         setup.setVisible(true);
         System.out.println(setup.getOption());
         RegistryListener listener = new RegistryListener() {
-            
+
             public void remoteDeviceDiscoveryStarted(Registry registry,
                                                      RemoteDevice device) {
-                if(device.isFullyHydrated() && (device.getType().equals(new UDADeviceType("MusicPlayer"))
+                if (device.isFullyHydrated() && (device.getType().equals(new UDADeviceType("MusicPlayer"))
                         || device.getType().equals(new UDADeviceType("Curtain"))
-                        || device.getType().equals(new UDADeviceType("CoffeeMaker"))))
-                {
+                        || device.getType().equals(new UDADeviceType("CoffeeMaker")))) {
                     Service power_service = device.findService(new UDAServiceType("SwitchStatus"));
                     volume_services.add(new ServiceManager(power_service, upnpService));
-                }
-                else if(device.isFullyHydrated() && device.getType().equals(new UDADeviceType("Alarm")))
-                {
+                } else if (device.isFullyHydrated() && device.getType().equals(new UDADeviceType("Alarm"))) {
                     Service service = device.findService(new UDAServiceType("SwitchStatus"));
                     SubscriptionCallback alarmCallback = new SubscriptionCallback(service) {
                         @Override
@@ -93,7 +91,9 @@ public class Main {
                             final int status_value = Integer.parseInt(status.toString());
                             System.out.println(setup.getOption());
                             alarm_notify(status_value == 1);
-                        };
+                        }
+
+                        ;
 
                         @Override
                         protected void eventsMissed(GENASubscription subscription, int numberOfMissedEvents) {
@@ -114,17 +114,15 @@ public class Main {
 //                System.out.println(
 //                        "Remote device available: " + device.getDisplayString()
 //                );
-                if(device.isFullyHydrated() && (device.getType().equals(new UDADeviceType("MusicPlayer")) 
+                if (device.isFullyHydrated() && (device.getType().equals(new UDADeviceType("MusicPlayer"))
                         || device.getType().equals(new UDADeviceType("Curtain"))
-                        || device.getType().equals(new UDADeviceType("CoffeeMaker"))))
-                {
+                        || device.getType().equals(new UDADeviceType("CoffeeMaker")))) {
                     Service power_service = device.findService(new UDAServiceType("SwitchStatus"));
                     volume_services.add(new ServiceManager(power_service, upnpService));
                 }
 //                System.out.println(device.getType().getDisplayString());
 //                System.out.print(device.getIdentity().getUdn());
-                else if(device.isFullyHydrated() && device.getType().equals(new UDADeviceType("Alarm")))
-                {
+                else if (device.isFullyHydrated() && device.getType().equals(new UDADeviceType("Alarm"))) {
                     Service service = device.findService(new UDAServiceType("SwitchStatus"));
                     SubscriptionCallback alarmCallback = new SubscriptionCallback(service) {
                         @Override
@@ -147,14 +145,15 @@ public class Main {
                             Map<String, StateVariableValue> values = subscription.getCurrentValues();
                             StateVariableValue status = values.get("Status");
                             final int status_value = Integer.parseInt(status.toString());
-                            if(status_value < notify)
-                            {
-                                if(setup.getOption() == Setup.WAKE_UP)
+                            if (status_value < notify) {
+                                if (setup.getOption() == Setup.WAKE_UP)
                                     alarm_notify(status_value == 1);
                             }
                             notify = status_value;
 
-                        };
+                        }
+
+                        ;
 
                         @Override
                         protected void eventsMissed(GENASubscription subscription, int numberOfMissedEvents) {
@@ -212,7 +211,7 @@ public class Main {
         // Let's wait 10 seconds for them to respond
         System.out.println("Waiting 10 seconds before shutting down...");
 //        Thread.sleep(10000);
-        while(true);
+        while (true) ;
     }
 }
 

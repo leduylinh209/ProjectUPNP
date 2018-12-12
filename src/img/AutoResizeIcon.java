@@ -13,26 +13,24 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
  * @author Admins
  */
 public class AutoResizeIcon {
-    public static void setIcon(JLabel label, String fileName)
-    {
+    public static void setIcon(JLabel label, String fileName) {
         try {
             BufferedImage image = ImageIO.read(AutoResizeIcon.class.getClassLoader().getResource(fileName));
-            int x =label.getSize().width;
-            int y =label.getSize().height;
-            int ix =image.getWidth();
-            int iy =image.getHeight();
-            int dx=0;
-            int dy=0;
-            if(x /y > ix /iy){
-                dy=y;
-                dx=dy*ix /iy;
-            }else{
-                dx=x;
-                dy=dx*iy/ix;
+            int x = label.getSize().width;
+            int y = label.getSize().height;
+            int ix = image.getWidth();
+            int iy = image.getHeight();
+            int dx = 0;
+            int dy = 0;
+            if (x / y > ix / iy) {
+                dy = y;
+                dx = dy * ix / iy;
+            } else {
+                dx = x;
+                dy = dx * iy / ix;
             }
             ImageIcon icon = new ImageIcon(image.getScaledInstance(dx, dy, BufferedImage.SCALE_SMOOTH));
             label.setIcon(icon);

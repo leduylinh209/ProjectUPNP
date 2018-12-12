@@ -9,23 +9,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
  * @author anhtu
  */
-public class AlarmAction implements Runnable{
+public class AlarmAction implements Runnable {
     private Alarm alarm;
     private int time;
-    
-    public AlarmAction(Alarm alarm, int time)
-    {
+
+    public AlarmAction(Alarm alarm, int time) {
         this.alarm = alarm;
         this.time = time;
     }
-    
+
     @Override
     public void run() {
-        while(time>0)
-        {
+        while (time > 0) {
             try {
                 Thread.sleep(1000);
                 time--;

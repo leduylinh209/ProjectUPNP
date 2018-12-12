@@ -32,29 +32,33 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
  * @author Admins
  */
-public class MusicPlayer extends JFrame implements PropertyChangeListener, ActionListener{
+public class MusicPlayer extends JFrame implements PropertyChangeListener, ActionListener {
     private UpnpService upnpService;
     private UDN udn = new UDN(UUID.randomUUID());
     private JButton but;
     private JLabel label;
 
-    public MusicPlayer()
-    {
+    public MusicPlayer() {
         init();
         onCreate();
     }
 
-    private void init()
-    {
-        setLayout(null); setSize(400, 400); setTitle(friendlyName);
-        setResizable(false); setResizable(false);
-        label = new JLabel(); label.setBounds(0, 0, 400, 300);
-        but = new JButton("ON/OFF"); but.setBounds(50, 300, 300, 50);
+    private void init() {
+        setLayout(null);
+        setSize(400, 400);
+        setTitle(friendlyName);
+        setResizable(false);
+        setResizable(false);
+        label = new JLabel();
+        label.setBounds(0, 0, 400, 300);
+        but = new JButton("ON/OFF");
+        but.setBounds(50, 300, 300, 50);
         AutoResizeIcon.setIcon(label, "img/mute.png");
-        add(label); add(but); but.addActionListener(this);
+        add(label);
+        add(but);
+        but.addActionListener(this);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -65,23 +69,20 @@ public class MusicPlayer extends JFrame implements PropertyChangeListener, Actio
     }
 
 
-    protected LocalService<SwitchStatus> getSwitchStatusService()
-    {
-        if(upnpService == null) return null;
+    protected LocalService<SwitchStatus> getSwitchStatusService() {
+        if (upnpService == null) return null;
         LocalDevice phoneDevice;
-        if((phoneDevice = upnpService.getRegistry().getLocalDevice(udn, true))==null)
+        if ((phoneDevice = upnpService.getRegistry().getLocalDevice(udn, true)) == null)
             return null;
         return (LocalService<SwitchStatus>)
                 phoneDevice.findService(new UDAServiceType("SwitchStatus", 1));
     }
 
-    public void onServiceConnection()
-    {
+    public void onServiceConnection() {
         upnpService = new UpnpServiceImpl();
 
         LocalService<SwitchStatus> switchStatusService = getSwitchStatusService();
-        if (switchStatusService == null)
-        {
+        if (switchStatusService == null) {
             try {
                 LocalDevice phoneDevice = createDevice();
 
@@ -100,8 +101,7 @@ public class MusicPlayer extends JFrame implements PropertyChangeListener, Actio
                 .addPropertyChangeListener(this);
     }
 
-    protected LocalDevice createDevice() throws org.fourthline.cling.model.ValidationException
-    {
+    protected LocalDevice createDevice() throws org.fourthline.cling.model.ValidationException {
         DeviceType type = new UDADeviceType("MusicPlayer", 1);
 
         DeviceDetails details = new DeviceDetails(friendlyName,
@@ -118,19 +118,17 @@ public class MusicPlayer extends JFrame implements PropertyChangeListener, Actio
     final String friendlyName = "MusicPlayer";
     final String manufacturerDetails = "LoaPhuong";
 
-    private void onCreate()
-    {
+    private void onCreate() {
         onServiceConnection();
     }
 
-    private void onDestroy()
-    {
+    private void onDestroy() {
         LocalService<SwitchStatus> switchStatusService = getSwitchStatusService();
         LocalDevice device = upnpService.getRegistry().getLocalDevice(udn, true);
         if (switchStatusService != null)
             switchStatusService.getManager().getImplementation().getPropertyChangeSupport()
                     .removePropertyChangeListener(this);
-        if(device != null)
+        if (device != null)
             upnpService.getRegistry().removeDevice(device);
         upnpService.shutdown();
     }
@@ -140,15 +138,14 @@ public class MusicPlayer extends JFrame implements PropertyChangeListener, Actio
         if (pce.getPropertyName().equals("status")) {
             System.out.println("Property Changed");
             boolean status = getStatus();
-            if(status) AutoResizeIcon.setIcon(label, "img/music.png");
+            if (status) AutoResizeIcon.setIcon(label, "img/music.png");
             else AutoResizeIcon.setIcon(label, "img/mute.png");
             repaint();
-            System.out.println(!status+" -> "+status);
+            System.out.println(!status + " -> " + status);
         }
     }
 
-    private void formWindowClosing(java.awt.event.WindowEvent evt)
-    {
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {
         System.out.println("Destroyed device");
         onDestroy();
     }
@@ -177,8 +174,7 @@ public class MusicPlayer extends JFrame implements PropertyChangeListener, Actio
         new ActionCallback.Default(invocation, upnpService.getControlPoint()).run();
     }
 
-    public boolean getStatus()
-    {
+    public boolean getStatus() {
         Action action = getSwitchStatusService().getAction("GetStatus");
         ActionInvocation invocation = new ActionInvocation(action);
         new ActionCallback.Default(invocation, upnpService.getControlPoint()).run();

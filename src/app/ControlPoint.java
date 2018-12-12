@@ -1,15 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package app;
 
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
+import com.sun.xml.internal.bind.v2.model.annotation.RuntimeAnnotationReader;
+import device.Alarm;
+import javafx.application.Platform;
 import org.fourthline.cling.UpnpService;
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.controlpoint.ActionCallback;
@@ -24,39 +17,157 @@ import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.model.state.StateVariableValue;
 import org.fourthline.cling.model.types.InvalidValueException;
 import org.fourthline.cling.model.types.ServiceId;
+import org.fourthline.cling.model.types.UDADeviceType;
 import org.fourthline.cling.model.types.UDAServiceId;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.registry.RegistryListener;
 
+import java.util.ArrayList;
 import java.util.Map;
 
-/**
- *
- * @author NgThach96
- */
-public class ControlPoint extends Application {
+public class ControlPoint implements Runnable {
+
+    private Controller controller;
+    static UpnpService upnpService = new UpnpServiceImpl();
+    public static ArrayList<DeviceManager> devices = new ArrayList<>();
+    public static AlarmManager alarm;
+
+    public ControlPoint(Controller controller) {
+        this.controller = controller;
+    }
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("sample.fxml"));
-        Parent root = loader.load();
-        Controller controller = loader.getController();
+    public void run() {
+        try {
 
-        Thread clientThread = new Thread(new test(controller));
-        clientThread.setDaemon(false);
-        clientThread.start();
-
-        primaryStage.setTitle("Control Panel");
-        primaryStage.setScene(new Scene(root, 300, 275));
-        primaryStage.show();
+            // Add a listener for device registration events
+            upnpService.getRegistry().addListener(
+                    createRegistryListener(upnpService)
+            );
+            // Broadcast a search message for all devices
+            upnpService.getControlPoint().search(
+                    new STAllHeader()
+            );
+        } catch (Exception ex) {
+            System.err.println("Exception occured: " + ex);
+            System.exit(1);
+        }
     }
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        launch(args);
+
+
+    // DOC: REGISTRYLISTENER
+    RegistryListener createRegistryListener(final UpnpService upnpService) {
+        return new DefaultRegistryListener() {
+
+            ServiceId serviceId = new UDAServiceId("SwitchStatus");
+
+
+            // Chạy đầu tiên
+            // Phát hiện ra con remote chỵ service gì
+            @Override
+            public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
+
+                // Change Status of alarm in control panel,
+                // Không hiểu lắm về hàm runLater của javafx, hàm này làm alarm nhảy số @@
+
+                Service switchStatus;
+                if ((switchStatus = device.findService(serviceId)) != null) {
+
+                    if (device.getType().equals(new UDADeviceType("Alarm"))) {
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                controller.changeAlarmTextOn();
+                            }
+                        });
+                    }
+                    System.out.println("Service discovered: " + switchStatus);
+                    // Khi phát hiện ra, gọi đến một hành động
+//                    executeAction(upnpService, switchStatus);
+                    if (device.getType().equals(new UDADeviceType("Alarm"))) {
+                        // Đăng ký lắng nghe service mới
+                        alarm = new AlarmManager(switchStatus, upnpService) {
+                            @Override
+                            public void onAlarmOff() {
+                                alarmNotify();
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        controller.onAlarmOff();
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onAlarmOn() {
+                                Platform.runLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        controller.onAlarmOn();
+                                    }
+                                });
+                            }
+                        };
+                    } else {
+                        devices.add(new DeviceManager(switchStatus, upnpService));
+                    }
+                }
+
+            }
+
+            @Override
+            public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
+                Service switchPower;
+                // Change Status of alarm in control panel,
+                // Không hiểu lắm về hàm runLater của javafx, hàm này làm alarm nhảy số @@
+                if ((switchPower = device.findService(serviceId)) != null) {
+                    System.out.println("Service disappeared: " + switchPower);
+                    if (device.getType().equals(new UDADeviceType("Alarm"))) {
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                controller.changeAlarmTextOff();
+                            }
+                        });
+                    }
+                }
+            }
+
+//            @Override
+//            public void remoteDeviceUpdated(Registry registry, RemoteDevice device) {
+//                super.remoteDeviceUpdated(registry, device);
+//                System.out.println(
+//                        "Remote device updated: " + device.getDisplayString()
+//                );
+//            }
+
+            @Override
+            public void beforeShutdown(Registry registry) {
+                super.beforeShutdown(registry);
+                System.out.println("Before shutdown, the registry has devices:" + registry.getDevices().size());
+            }
+
+            @Override
+            public void afterShutdown() {
+                super.afterShutdown();
+                System.out.println("Shutdown of registry complete!");
+            }
+        };
     }
-    
+
+    // DOC: REGISTRYLISTENER
+    // DOC: EXECUTEACTION
+
+    public static void shutdowService() {
+        upnpService.shutdown();
+    }
+
+    public static void alarmNotify() {
+        for (DeviceManager device : devices) {
+            device.setPower(true);
+        }
+    }
+
 }

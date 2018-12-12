@@ -32,29 +32,33 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
  * @author Admins
  */
-public class Alarm extends JFrame implements PropertyChangeListener, ActionListener{
+public class Alarm extends JFrame implements PropertyChangeListener, ActionListener {
     private UpnpService upnpService;
     private UDN udn = new UDN(UUID.randomUUID());
     private JButton but;
     private JLabel label;
-    
-    public Alarm()
-    {
+
+    public Alarm() {
         init();
         onCreate();
     }
-    
-    private void init()
-    {
-        setLayout(null); setSize(400, 430); setTitle(friendlyName);
-        setResizable(false); setResizable(false);
-        label = new JLabel(); label.setBounds(0, 0, 380, 300);
-        but = new JButton("ON/OFF"); but.setBounds(50, 305, 300, 50);
+
+    private void init() {
+        setLayout(null);
+        setSize(400, 430);
+        setTitle(friendlyName);
+        setResizable(false);
+        setResizable(false);
+        label = new JLabel();
+        label.setBounds(0, 0, 380, 300);
+        but = new JButton("ON/OFF");
+        but.setBounds(50, 305, 300, 50);
         AutoResizeIcon.setIcon(label, "img/alarm.png");
-        add(label); add(but); but.addActionListener(this);
+        add(label);
+        add(but);
+        but.addActionListener(this);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -62,68 +66,66 @@ public class Alarm extends JFrame implements PropertyChangeListener, ActionListe
                 formWindowClosing(evt);
             }
         });
-        
-        time.setBounds(50, 360, 30, 30); add(time);
-        JLabel la = new JLabel("Giây"); la.setBounds(85, 360, 30, 30); add(la);
+
+        time.setBounds(50, 360, 30, 30);
+        add(time);
+        JLabel la = new JLabel("Giây");
+        la.setBounds(85, 360, 30, 30);
+        add(la);
     }
-    
+
     JTextField time = new JTextField();
-    
-    protected LocalService<SwitchStatus> getSwitchStatusService()
-    {
-        if(upnpService == null) return null;
+
+    protected LocalService<SwitchStatus> getSwitchStatusService() {
+        if (upnpService == null) return null;
         LocalDevice phoneDevice;
-        if((phoneDevice = upnpService.getRegistry().getLocalDevice(udn, true))==null)
+        if ((phoneDevice = upnpService.getRegistry().getLocalDevice(udn, true)) == null)
             return null;
         return (LocalService<SwitchStatus>)
                 phoneDevice.findService(new UDAServiceType("SwitchStatus", 1));
     }
-    
-    public void onServiceConnection()
-    {
+
+    public void onServiceConnection() {
         upnpService = new UpnpServiceImpl();
-        
+
         LocalService<SwitchStatus> switchStatusService = getSwitchStatusService();
-        if (switchStatusService == null) 
-        {
+        if (switchStatusService == null) {
             try {
-                    LocalDevice phoneDevice = createDevice();
+                LocalDevice phoneDevice = createDevice();
 
-                    System.out.println("Created device");
-                    upnpService.getRegistry().addDevice(phoneDevice);
+                System.out.println("Created device");
+                upnpService.getRegistry().addDevice(phoneDevice);
 
-                    switchStatusService = getSwitchStatusService();
+                switchStatusService = getSwitchStatusService();
 
-                } catch (Exception ex) {
-                    System.out.println("Creating device failed");
-                    return;
-                }
+            } catch (Exception ex) {
+                System.out.println("Creating device failed");
+                return;
+            }
         }
-        
+
         switchStatusService.getManager().getImplementation().getPropertyChangeSupport()
                 .addPropertyChangeListener(this);
     }
-    
-    protected LocalDevice createDevice() throws org.fourthline.cling.model.ValidationException
-    {
+
+    protected LocalDevice createDevice() throws org.fourthline.cling.model.ValidationException {
         DeviceType type = new UDADeviceType("Alarm", 1);
-        
+
         DeviceDetails details = new DeviceDetails(friendlyName,
                 new ManufacturerDetails(manufacturerDetails),
                 new ModelDetails("VirtualPhone", "A phone with 2 state ringing and not ringing", "v1"));
-        
+
         LocalService service = new AnnotationLocalServiceBinder().read(SwitchStatus.class);
         service.setManager(new DefaultServiceManager<>(service, SwitchStatus.class));
-        
+
         LocalDevice device = new LocalDevice(new DeviceIdentity(udn), type, details, createDefaultDeviceIcon(), service);
         return device;
     }
-    
+
     final String friendlyName = "Alarm";
     final String manufacturerDetails = "Rooster";
-    
-    private void onCreate()
-    {
+
+    private void onCreate() {
         onServiceConnection();
     }
 
@@ -132,13 +134,13 @@ public class Alarm extends JFrame implements PropertyChangeListener, ActionListe
         if (pce.getPropertyName().equals("status")) {
             System.out.println("Property Changed");
             boolean status = getStatus();
-            if(status) AutoResizeIcon.setIcon(label, "img/alarmon.png");
+            if (status) AutoResizeIcon.setIcon(label, "img/alarmon.png");
             else AutoResizeIcon.setIcon(label, "img/alarm.png");
             repaint();
-            System.out.println(!status+" -> "+status);
+            System.out.println(!status + " -> " + status);
         }
     }
-    
+
     protected Icon createDefaultDeviceIcon() {
         try {
             File file = new File("src/img/Webp.net-resizeimage.jpg");
@@ -148,7 +150,7 @@ public class Alarm extends JFrame implements PropertyChangeListener, ActionListe
             return null;
         }
     }
-    
+
     public static void main(String[] args) {
         new Alarm();
     }
@@ -156,17 +158,14 @@ public class Alarm extends JFrame implements PropertyChangeListener, ActionListe
     @Override
     public void actionPerformed(ActionEvent ae) {
         boolean status = getStatus();
-        if(runtime)
-        {
+        if (runtime) {
             x.stop();
             runtime = false;
             time.setEditable(true);
             return;
         }
-        if(status == true) 
-        {
-            if(x!=null)
-            {
+        if (status == true) {
+            if (x != null) {
                 x.stop();
                 time.setEditable(true);
             }
@@ -184,16 +183,15 @@ public class Alarm extends JFrame implements PropertyChangeListener, ActionListe
             time.setEditable(true);
         }
     }
-    
+
     public boolean runtime = false;
     Thread x;
-    public void updateTime(int t)
-    {
-        time.setText(""+t);
+
+    public void updateTime(int t) {
+        time.setText("" + t);
     }
-    
-    public void switchStatus()
-    {
+
+    public void switchStatus() {
         boolean status = !getStatus();
         Service service = getSwitchStatusService();
         Action action = service.getAction("SetTarget");
@@ -201,9 +199,8 @@ public class Alarm extends JFrame implements PropertyChangeListener, ActionListe
         invocation.setInput("NewTargetValue", status);
         new ActionCallback.Default(invocation, upnpService.getControlPoint()).run();
     }
-    
-    public boolean getStatus()
-    {
+
+    public boolean getStatus() {
         Action action = getSwitchStatusService().getAction("GetStatus");
         ActionInvocation invocation = new ActionInvocation(action);
         new ActionCallback.Default(invocation, upnpService.getControlPoint()).run();
@@ -211,22 +208,20 @@ public class Alarm extends JFrame implements PropertyChangeListener, ActionListe
         boolean value = status.booleanValue();
         return value;
     }
-    
+
     // Close window and destroy upnp service
-    private void formWindowClosing(java.awt.event.WindowEvent evt)
-    {
+    private void formWindowClosing(java.awt.event.WindowEvent evt) {
         System.out.println("Destroyed device");
         onDestroy();
     }
-    
-    private void onDestroy()
-    {
+
+    private void onDestroy() {
         LocalService<SwitchStatus> switchStatusService = getSwitchStatusService();
         LocalDevice device = upnpService.getRegistry().getLocalDevice(udn, true);
         if (switchStatusService != null)
             switchStatusService.getManager().getImplementation().getPropertyChangeSupport()
-                .removePropertyChangeListener(this);
-        if(device != null)
+                    .removePropertyChangeListener(this);
+        if (device != null)
             upnpService.getRegistry().removeDevice(device);
         upnpService.shutdown();
     }
